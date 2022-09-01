@@ -1,5 +1,9 @@
 #### R CODE FOR PARAFIT ANALYSIS ####
-
+#### kbeigel on 2022-08-31: added lines to include node labels on final cophylogeny 
+#### (to avoid having to add them in manually on the final PDF). Also added options to 
+#### modify tip.labels (the taxa names) using str_replace fxn; this is useful if
+#### you need to replace a prefix/suffix/punctuation on tip labels (especially things like
+#### '-' which R sometimes doesn't like.
 
 #### SET WORKING DIRECTORY
 setwd("~name")
@@ -9,22 +13,38 @@ setwd("~name")
 library(ape)
 library(phangorn)
 library(parallel)
-
+library(stringr)
+library(phytools)
 
 #### SET ALPHA LEVEL
-p_level<-0.055
+p_level<-0.05
 
 
-#### READ IN 'PARASITE' TREE 
-p.tree<-read.nexus("name.tre")
+#### READ IN 'PARASITE' TREE
+p.tree<-readNexus("name.nexus")
 
 
 #### REMOVE 'PARASITE' OUTGROUPS OR DUPLICATE TAXA 
 parasite_tree <- drop.tip(p.tree, c('outgroup1', 'outgroup2', 'duplicate1'))
 
 
-#### READ IN 'HOST' TREE
-host_tree<- read.tree("name.tre") # may also use read.nexus
+#### OPTIONAL: REPLACE PARTS OF TIP LABEL STRINGS (TAXA NAMES)
+#### THIS IS HELPFUL IF TAXA ALL HAVE THE SAME PREFIX/SUFFIX/PUNCTUATION/ETC
+#### THAT YOU DO NOT WANT TO CARRY THROUGH IN THE ANALYSIS.
+parasite_tree[["tip.label"]] <- str_replace(parasite_tree[["tip.label"]], 'str_to_replace', 'str_replacement')
+
+
+#### READ IN 'HOST' TREE, CAN BE .tre OR .nexus
+h.tree <- readNexus("name.Nexus")
+
+#### REMOVE 'PARASITE' OUTGROUPS OR DUPLICATE TAXA 
+host_tree <- drop.tip(h.tree, c('outgroup1', 'outgroup2', 'duplicate1'))
+
+
+#### OPTIONAL: REPLACE PARTS OF TIP LABEL STRINGS (TAXA NAMES)
+#### THIS IS HELPFUL IF TAXA ALL HAVE THE SAME PREFIX/SUFFIX/PUNCTUATION/ETC
+#### THAT YOU DO NOT WANT TO CARRY THROUGH IN THE ANALYSIS.
+host_tree[["tip.label"]] <- str_replace(host_tree[["tip.label"]], 'str_to_replace', 'str_replacement')
 
 
 #### READ IN HOST-PARASITE MATRIX
@@ -166,9 +186,19 @@ ph2 <- parasite_tree
 assoc_links <- links_parafit_order
 cophy <- cophylo(ph1, ph2, assoc=assoc_links, rotate=T)
 
-pdf("name.pdf", height = 30, width = 45) # sets size of printing area 
-cophyloplot_min<-plot(cophy, link.lty=p_type, link.col=p_colors, link.lwd=8, fsize=3.5,pts=F)
+
+## WRITE TANGLEGRAM TO PDF
+pdf("name.pdf", height = 100, width = 100) # sets size of printing area 
+plot(cophy, link.lty=p_type, link.col=p_colors, link.lwd=8, fsize=3.5,pts=F)
+
+#### ADD NODE LABELS TO COPHYLO (BOOTSTRAP VALUES)
+#### METHOD ADAPTED FROM http://blog.phytools.org/2018/06/preserving-node-edge-labels-after.html
+nodelabels.cophylo(cophy$trees[[1]]$node.label,1:cophy$trees[[1]]$Nnode+
+                     Ntip(cophy$trees[[1]]),which="left",frame = "none",cex=5,adj=c(1.0,-0.2))
+nodelabels.cophylo(cophy$trees[[2]]$node.label,1:cophy$trees[[2]]$Nnode+
+                     Ntip(cophy$trees[[2]]),which="right",frame = "none",cex=5,adj=c(1.0,-0.2))
 dev.off()
+
 
 #### IF LABEL NAMES ARE TOO LONG
 # EMMANUEL PARADIS AT http://grokbase.com/t/r/r-sig-phylo/12c3djkx3h/modification-of-figures-produced-using-cophyloplot
