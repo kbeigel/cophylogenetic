@@ -1,4 +1,4 @@
-# ParaFit and PACo analyses
+# ParaFit analysis
 
 **parafit_scipt.R**
 
