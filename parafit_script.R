@@ -91,11 +91,10 @@ data.class(res) # SHOULD BE 'LIST'
 res_p<-sapply(res, "[[",2) 
 # res_p # TO SEE OUTPUT
 data.class(res_p) # NUMERIC
-as.matrix(res_p) # MAKE MATRIX FOR NEXT STEP
 
 
 #### NOW, YOU CAN GET THE AVERAGE P.GLOBAL VALUE
-p_global_mean<-mean(res_p[[1]])
+p_global_mean<-mean(res_p)
 p_global_mean 
 
 
